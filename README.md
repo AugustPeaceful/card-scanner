@@ -1,1 +1,1 @@
-# card-scanner
+# Stancard-scanner
