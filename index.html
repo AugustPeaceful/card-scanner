@@ -29,9 +29,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;}
 .view.active{display:block;}
 
-/* status bar */
 .status-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);margin:12px 16px 0;border-radius:10px;font-size:13px;}
-.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--muted);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .status-dot.loading{background:#f9a825;animation:pulse 1s infinite;}
 .status-dot.ready{background:var(--green);}
 .status-dot.error{background:var(--red);}
@@ -53,22 +52,19 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .btn-green{background:var(--green);color:#000;}
 .btn:disabled{opacity:.35;pointer-events:none;}
 
-/* raw text box */
 .raw-wrap{background:var(--card);border-radius:var(--radius);overflow:hidden;}
 .raw-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:0.5px solid var(--border);}
 .raw-header span{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
 .raw-header button{font-size:12px;background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;}
-.raw-text{width:100%;min-height:80px;max-height:160px;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Menlo',monospace;padding:12px 14px;resize:none;overflow-y:auto;}
+.raw-text{width:100%;min-height:80px;max-height:150px;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Menlo',monospace;padding:12px 14px;resize:none;overflow-y:auto;}
 .raw-text::placeholder{color:var(--muted);}
 
-/* fields */
 .fields-card{background:var(--card);border-radius:var(--radius);overflow:hidden;}
 .field-row{display:flex;align-items:flex-start;border-bottom:0.5px solid var(--border);}
 .field-row:last-child{border-bottom:none;}
 .field-label{padding:13px 10px 13px 14px;font-size:12px;color:var(--muted);font-weight:500;min-width:82px;flex-shrink:0;}
 .field-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:12px 14px 12px 0;width:100%;font-family:inherit;resize:none;}
 
-/* contacts */
 .contacts-wrap{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(16px + var(--safe-b));}
 .search-bar{background:var(--card);border-radius:10px;border:none;outline:none;color:var(--text);font-size:15px;padding:12px 16px;width:100%;font-family:inherit;}
 .search-bar::placeholder{color:var(--muted);}
@@ -89,8 +85,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 #init-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;padding:24px;}
 #init-overlay .o-icon{font-size:56px;}
 #init-overlay p{color:var(--muted);font-size:14px;text-align:center;max-width:280px;line-height:1.7;}
-#init-overlay .o-progress{width:240px;height:3px;background:var(--card2);border-radius:99px;overflow:hidden;}
-#init-overlay .o-fill{height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .4s;}
+.o-progress{width:240px;height:3px;background:var(--card2);border-radius:99px;overflow:hidden;}
+.o-fill{height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .4s;}
 .btn-retry{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:15px;font-weight:600;cursor:pointer;display:none;}
 </style>
 </head>
@@ -99,7 +95,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 <div id="init-overlay">
   <div class="o-icon">🪪</div>
   <div class="o-progress"><div class="o-fill" id="o-fill"></div></div>
-  <p id="init-msg">Загружаем OCR-движок…<br><small>Первый раз ~30–60 сек, нужен интернет</small></p>
+  <p id="init-msg">Загружаем OCR-движок…<br><small>Первый раз ~15 сек, нужен интернет</small></p>
   <button class="btn-retry" id="btn-retry" onclick="retryInit()">🔄 Попробовать снова</button>
 </div>
 
@@ -112,17 +108,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
     </div>
   </div>
 
-  <!-- SCAN VIEW -->
   <div class="view active" id="view-scan">
-
-    <!-- engine status -->
     <div class="status-bar">
       <div class="status-dot loading" id="status-dot"></div>
       <span id="status-text">Загружаем OCR-движок…</span>
     </div>
 
     <div class="scan-wrap">
-
       <div class="img-area" id="img-area">
         <div class="placeholder">
           <span class="icon">📷</span>
@@ -136,7 +128,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
         <button class="btn btn-accent" id="btn-ocr" disabled onclick="runOCR()">🔍 Сканировать</button>
       </div>
 
-      <!-- raw OCR text — visible, editable -->
       <div class="raw-wrap">
         <div class="raw-header">
           <span>Распознанный текст</span>
@@ -152,17 +143,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
         <div class="field-row"><span class="field-label">Телефон</span><input class="field-input" id="f-phone" placeholder="—" type="tel"></div>
         <div class="field-row"><span class="field-label">Email</span><input class="field-input" id="f-email" placeholder="—" type="email"></div>
         <div class="field-row"><span class="field-label">Сайт</span><input class="field-input" id="f-web" placeholder="—" type="url"></div>
+        <div class="field-row"><span class="field-label">Адрес</span><input class="field-input" id="f-address" placeholder="—" type="text"></div>
         <div class="field-row"><span class="field-label">Страна</span><input class="field-input" id="f-country" placeholder="—" type="text"></div>
         <div class="field-row"><span class="field-label">Заметки</span><textarea class="field-input" id="f-notes" rows="2" placeholder="—"></textarea></div>
       </div>
 
       <button class="btn btn-green" onclick="addContact()">➕ Добавить в контакты</button>
       <button class="btn" onclick="clearScan()">🧹 Очистить</button>
-
     </div>
   </div>
 
-  <!-- CONTACTS VIEW -->
   <div class="view" id="view-contacts">
     <div class="contacts-wrap">
       <input class="search-bar" type="search" placeholder="🔍 Поиск…" oninput="renderContacts(this.value)">
@@ -184,116 +174,150 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 const DB = (() => {
   let db;
   const open = () => new Promise((res,rej) => {
-    const r = indexedDB.open('CardScanner',1);
-    r.onupgradeneeded = e => e.target.result.createObjectStore('c',{keyPath:'id',autoIncrement:true});
+    const r = indexedDB.open('CardScanner',2);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('c'))
+        d.createObjectStore('c',{keyPath:'id',autoIncrement:true});
+    };
     r.onsuccess = e => { db=e.target.result; res(); };
     r.onerror = rej;
   });
-  const all = () => new Promise((res,rej) => {
-    const r = db.transaction('c').objectStore('c').getAll();
-    r.onsuccess=()=>res(r.result); r.onerror=rej;
-  });
-  const add = d => new Promise((res,rej) => {
-    const r = db.transaction('c','readwrite').objectStore('c').add(d);
-    r.onsuccess=()=>res(r.result); r.onerror=rej;
-  });
-  const del = id => new Promise((res,rej) => {
-    const r = db.transaction('c','readwrite').objectStore('c').delete(id);
-    r.onsuccess=res; r.onerror=rej;
-  });
+  const all = () => new Promise((res,rej) => { const r=db.transaction('c').objectStore('c').getAll(); r.onsuccess=()=>res(r.result); r.onerror=rej; });
+  const add = d => new Promise((res,rej) => { const r=db.transaction('c','readwrite').objectStore('c').add(d); r.onsuccess=()=>res(r.result); r.onerror=rej; });
+  const del = id => new Promise((res,rej) => { const r=db.transaction('c','readwrite').objectStore('c').delete(id); r.onsuccess=res; r.onerror=rej; });
   return {open,all,add,del};
 })();
 
-// ── parser ─────────────────────────────────────────────────────────────────
-function parseCard(text) {
-  const d = {};
-  const emailM = text.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
-  if (emailM) d.email = emailM[0];
+// ── PARSER (English-focused) ───────────────────────────────────────────────
+function cleanOCR(raw) {
+  // Remove lines that are mostly noise (non-latin garbage)
+  return raw.split('\n').filter(line => {
+    const latin = (line.match(/[a-zA-Z0-9@.+\-_\/:()\s]/g)||[]).length;
+    const total = line.trim().length;
+    if (total === 0) return false;
+    return (latin / total) > 0.5; // keep lines that are >50% latin chars
+  }).join('\n');
+}
 
-  const allPhones = [...text.matchAll(/(\+?[\d][\d\s\-().]{6,20})/g)]
-    .map(m => m[1].trim())
+function parseCard(rawText) {
+  const text  = cleanOCR(rawText);
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  const d     = {};
+
+  // Email
+  const emailM = rawText.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
+  if (emailM) d.email = emailM[0].toLowerCase();
+
+  // All phones — grab up to 2, join with " / "
+  const phones = [...rawText.matchAll(/(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/g)]
+    .map(m => m[1].replace(/\s+/g,' ').trim())
     .filter(p => p.replace(/\D/g,'').length >= 7);
-  if (allPhones.length) d.phone = allPhones[0];
+  const unique = [...new Set(phones)];
+  if (unique.length) d.phone = unique.slice(0,2).join(' / ');
 
-  const urlM = text.match(/(?:https?:\/\/|www\.)\S+/i);
-  if (urlM) d.web = urlM[0].replace(/[.,)]+$/,'');
+  // Website
+  const urlM = rawText.match(/(?:https?:\/\/|www\.)[^\s,]+/i);
+  if (urlM) d.web = urlM[0].replace(/[.,)>]+$/,'');
 
-  const compKW = ['Co.,','Ltd.','Corp.','Inc.','LLC','GmbH','B&H',
-    '株式会社','합자회사','주식회사','有限公司','Clinic','Labo','Corporation'];
-  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  // Company keywords
+  const compKW = ['Co.','Ltd.','Corp.','Inc.','LLC','LLP','GmbH','Group',
+                  'Studio','Agency','Services','Solutions','Consulting','Holdings'];
   for (const l of lines) {
-    if (compKW.some(k=>l.includes(k))) { d.company=l; break; }
+    if (compKW.some(k => l.includes(k)) && l.length < 60) { d.company = l; break; }
   }
 
-  for (const [kw,country] of [['JAPAN','Japan'],['KOREA','Korea'],
-      ['CHINA','China'],['FRANCE','France'],['USA','USA']]) {
-    if (text.toUpperCase().includes(kw)) { d.country=country; break; }
-  }
-
-  const skipRe = /^(TEL|FAX|URL|HP|MOB|EMAIL|WWW|HTTP|〒|©|\+\d)/i;
+  // Title / position — common keywords
+  const titleKW = ['CEO','COO','CFO','CTO','CMO','Owner','Founder','Co-Founder',
+    'Director','Manager','President','VP','Vice','Partner','Head','Chief',
+    'Consultant','Advisor','Associate','Specialist','Engineer','Designer',
+    'Developer','Analyst','Coordinator','Executive','Officer','Representative'];
   for (const l of lines) {
-    const words = l.split(/\s+/).filter(Boolean);
-    if (words.length>=1 && words.length<=5
-        && !compKW.some(k=>l.includes(k))
-        && !/[@\d\\/]/.test(l)
-        && !skipRe.test(l)
-        && l.length>2) {
-      d.name=l; break;
+    if (titleKW.some(k => l.toUpperCase().includes(k.toUpperCase())) && l.length < 60) {
+      d.title = l; break;
     }
   }
+
+  // Address — lines with city/state/zip or "located in"
+  const addrKW = ['Street','St.','Ave','Blvd','Road','Rd.','Suite','Floor',
+    'located','Miami','New York','Los Angeles','Chicago','London','Tokyo','Seoul'];
+  for (const l of lines) {
+    if (addrKW.some(k => l.includes(k)) && l.length < 80) { d.address = l; break; }
+  }
+
+  // Country
+  const countryMap = {
+    'USA':'USA','UNITED STATES':'USA','JAPAN':'Japan','KOREA':'Korea',
+    'CHINA':'China','FRANCE':'France','GERMANY':'Germany','UK':'UK',
+    'UNITED KINGDOM':'UK','CANADA':'Canada','AUSTRALIA':'Australia',
+    'MIAMI':'USA','NEW YORK':'USA','CALIFORNIA':'USA','FLORIDA':'USA'
+  };
+  const upperText = text.toUpperCase();
+  for (const [kw, country] of Object.entries(countryMap)) {
+    if (upperText.includes(kw)) { d.country = country; break; }
+  }
+
+  // Name — find the most "person-like" line:
+  // - 2 words, both starting with capital
+  // - not a company line, not title, not contact info
+  const skipRe = /^(TEL|FAX|URL|HP|MOB|EMAIL|WWW|HTTP|@|\+\d)/i;
+  const looksLikeName = l => {
+    const words = l.split(/\s+/).filter(Boolean);
+    if (words.length < 1 || words.length > 4) return false;
+    if (skipRe.test(l)) return false;
+    if (/[@\d\\/.,]/.test(l)) return false;
+    if (compKW.some(k => l.includes(k))) return false;
+    if (titleKW.some(k => l.toUpperCase().includes(k.toUpperCase()))) return false;
+    // at least first word starts with capital
+    return /^[A-Z]/.test(words[0]);
+  };
+  for (const l of lines) {
+    if (looksLikeName(l)) { d.name = l; break; }
+  }
+
   return d;
 }
 
 // ── state ──────────────────────────────────────────────────────────────────
 let contacts=[], worker=null, imgData=null, workerReady=false;
-const FIELDS=['name','company','title','phone','email','web','country','notes'];
+const FIELDS=['name','company','title','phone','email','web','address','country','notes'];
 const f = id => document.getElementById('f-'+id);
 
-// ── status ─────────────────────────────────────────────────────────────────
 function setStatus(state, msg) {
-  // state: 'loading' | 'ready' | 'error'
-  const dot  = document.getElementById('status-dot');
-  const text = document.getElementById('status-text');
-  dot.className  = 'status-dot ' + state;
-  text.textContent = msg;
+  document.getElementById('status-dot').className = 'status-dot ' + state;
+  document.getElementById('status-text').textContent = msg;
 }
 
-// ── Tesseract init ─────────────────────────────────────────────────────────
+// ── Tesseract init — English only ──────────────────────────────────────────
 async function initWorker() {
   const fill = document.getElementById('o-fill');
   const msg  = document.getElementById('init-msg');
-  setStatus('loading','Загружаем OCR-движок…');
+  setStatus('loading','Загружаем OCR…');
 
   try {
-    // Tesseract.js v4 API (more compatible with Safari)
     worker = await Tesseract.createWorker({
       logger: m => {
-        if (m.status==='loading tesseract core')         { fill.style.width='15%'; msg.textContent='Загружаем ядро…'; }
-        if (m.status==='initializing tesseract')         { fill.style.width='30%'; msg.textContent='Инициализация…'; }
-        if (m.status==='loading language traineddata')   {
-          const pct = 30 + Math.round((m.progress||0)*50);
-          fill.style.width = pct+'%';
-          msg.textContent = 'Загружаем языки… '+pct+'%';
-        }
-        if (m.status==='initializing api')               { fill.style.width='90%'; msg.textContent='Почти готово…'; }
+        if (m.status==='loading tesseract core')       { fill.style.width='20%'; msg.textContent='Загрузка ядра…'; }
+        if (m.status==='initializing tesseract')       { fill.style.width='50%'; msg.textContent='Инициализация…'; }
+        if (m.status==='loading language traineddata') { fill.style.width='75%'; msg.textContent='Загрузка английского языка…'; }
+        if (m.status==='initializing api')             { fill.style.width='90%'; msg.textContent='Почти готово…'; }
       }
     });
 
-    await worker.loadLanguage('eng+rus+jpn+kor');
-    await worker.initialize('eng+rus+jpn+kor');
+    await worker.loadLanguage('eng');
+    await worker.initialize('eng');
 
-    fill.style.width = '100%';
+    fill.style.width='100%';
     workerReady = true;
-    document.getElementById('init-overlay').style.display = 'none';
-    setStatus('ready','OCR готов — eng / rus / jpn / kor');
+    document.getElementById('init-overlay').style.display='none';
+    setStatus('ready','OCR готов — English');
     updateScanBtn();
 
   } catch(err) {
-    console.error('Tesseract init error:', err);
-    msg.innerHTML = '❌ Ошибка загрузки OCR:<br><small>'+err.message+'</small><br><small>Проверь интернет и попробуй снова</small>';
-    document.getElementById('btn-retry').style.display = 'block';
-    fill.style.width='0%';
-    setStatus('error','OCR не загружен — нет интернета?');
+    console.error(err);
+    msg.innerHTML='❌ Ошибка: '+err.message+'<br><small>Проверь интернет</small>';
+    document.getElementById('btn-retry').style.display='block';
+    setStatus('error','Ошибка загрузки OCR');
   }
 }
 
@@ -301,43 +325,40 @@ async function retryInit() {
   document.getElementById('btn-retry').style.display='none';
   document.getElementById('o-fill').style.width='0%';
   if (worker) { try { await worker.terminate(); } catch(e){} }
-  worker = null; workerReady = false;
+  worker=null; workerReady=false;
   await initWorker();
 }
 
 // ── OCR ────────────────────────────────────────────────────────────────────
 async function runOCR() {
   if (!imgData) { toast('⚠ Сначала выбери фото'); return; }
-  if (!workerReady || !worker) {
-    toast('⏳ OCR ещё загружается, подожди…');
-    setStatus('loading','Загружаем OCR-движок…');
-    return;
-  }
+  if (!workerReady || !worker) { toast('⏳ OCR ещё загружается…'); return; }
 
   setStatus('loading','Распознавание…');
-  document.getElementById('btn-ocr').disabled = true;
-  document.getElementById('raw-text').value = 'Идёт распознавание…';
+  document.getElementById('btn-ocr').disabled=true;
+  document.getElementById('raw-text').value='Идёт распознавание…';
 
   try {
     const { data: { text } } = await worker.recognize(imgData);
-    document.getElementById('raw-text').value = text.trim() || '(текст не обнаружен)';
+    const cleaned = cleanOCR(text);
+    document.getElementById('raw-text').value = cleaned.trim() || '(текст не обнаружен)';
     const parsed = parseCard(text);
     FIELDS.forEach(k => { if(f(k)) f(k).value = parsed[k]||''; });
-    setStatus('ready','Готово! Проверь и отредактируй поля.');
-    toast('✅ Готово — проверь поля');
+    setStatus('ready','Готово! Проверь поля.');
+    toast('✅ Готово — проверь и дополни поля');
   } catch(err) {
-    document.getElementById('raw-text').value = 'Ошибка: '+err.message;
-    setStatus('error','Ошибка OCR: '+err.message);
-    toast('❌ Ошибка: '+err.message);
+    document.getElementById('raw-text').value='Ошибка: '+err.message;
+    setStatus('error','Ошибка: '+err.message);
+    toast('❌ '+err.message);
   }
-  document.getElementById('btn-ocr').disabled = false;
+  document.getElementById('btn-ocr').disabled=false;
 }
 
 function reparseManual() {
-  const text = document.getElementById('raw-text').value;
-  if (!text || text==='Идёт распознавание…') { toast('⚠ Нет текста для разбора'); return; }
-  const parsed = parseCard(text);
-  FIELDS.forEach(k => { if(f(k)) f(k).value = parsed[k]||''; });
+  const text=document.getElementById('raw-text').value;
+  if (!text||text==='Идёт распознавание…') { toast('⚠ Нет текста'); return; }
+  const parsed=parseCard(text);
+  FIELDS.forEach(k => { if(f(k)) f(k).value=parsed[k]||''; });
   toast('✅ Поля обновлены');
 }
 
@@ -346,12 +367,10 @@ function triggerCamera()  { document.getElementById('input-camera').click(); }
 function triggerGallery() { document.getElementById('input-gallery').click(); }
 
 function handleFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  imgData = url;
-  const area = document.getElementById('img-area');
-  area.innerHTML = `<img src="${url}" alt="card">
+  const file=input.files[0]; if(!file) return;
+  const url=URL.createObjectURL(file);
+  imgData=url;
+  document.getElementById('img-area').innerHTML=`<img src="${url}" alt="card">
     <div class="img-btns">
       <button class="img-btn" onclick="triggerCamera()">📷</button>
       <button class="img-btn" onclick="triggerGallery()">🖼</button>
@@ -361,20 +380,19 @@ function handleFile(input) {
 }
 
 function updateScanBtn() {
-  document.getElementById('btn-ocr').disabled = !(imgData && workerReady);
+  document.getElementById('btn-ocr').disabled=!(imgData&&workerReady);
 }
 
 // ── contacts ───────────────────────────────────────────────────────────────
 async function addContact() {
   const c={};
-  FIELDS.forEach(k=>{ c[k]=f(k)?f(k).value.trim():''; });
+  FIELDS.forEach(k => { c[k]=f(k)?f(k).value.trim():''; });
   if (!Object.values(c).some(Boolean)) { toast('⚠ Все поля пусты'); return; }
   c.ts=Date.now();
   const id=await DB.add(c); c.id=id;
   contacts.push(c);
   updateCount(); renderContacts();
-  clearScan();
-  switchView('contacts');
+  clearScan(); switchView('contacts');
   toast('✅ Контакт сохранён');
 }
 
@@ -406,6 +424,7 @@ function renderContacts(search='') {
         ${c.phone?`📞 ${esc(c.phone)}<br>`:''}
         ${c.email?`✉️ ${esc(c.email)}<br>`:''}
         ${c.web?`🌐 ${esc(c.web)}<br>`:''}
+        ${c.address?`📍 ${esc(c.address)}<br>`:''}
         ${c.country?`🌍 ${esc(c.country)}<br>`:''}
         ${c.notes?`📝 ${esc(c.notes)}`:''}
       </div>
@@ -418,11 +437,10 @@ function updateCount() {
   document.getElementById('cnt2').textContent=n;
 }
 
-// ── export ─────────────────────────────────────────────────────────────────
 function exportCSV() {
   if (!contacts.length) { toast('⚠ Нет контактов'); return; }
-  const hdr=['Name','Company','Title','Phone','Email','Website','Country','Notes'];
-  const keys=['name','company','title','phone','email','web','country','notes'];
+  const hdr=['Name','Company','Title','Phone','Email','Website','Address','Country','Notes'];
+  const keys=['name','company','title','phone','email','web','address','country','notes'];
   const rows=[hdr,...contacts.map(c=>keys.map(k=>`"${(c[k]||'').replace(/"/g,'""')}"`))];
   const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
@@ -431,7 +449,6 @@ function exportCSV() {
   toast('✅ CSV сохранён');
 }
 
-// ── ui helpers ─────────────────────────────────────────────────────────────
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -458,7 +475,6 @@ function toast(msg) {
 }
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// ── init ───────────────────────────────────────────────────────────────────
 (async()=>{
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   await DB.open();
