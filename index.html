@@ -10,101 +10,97 @@
 <title>Card Scanner</title>
 <style>
 :root {
-  --bg:      #0f0f12;
-  --card:    #1c1c22;
-  --card2:   #26262e;
-  --accent:  #7c6af7;
-  --green:   #30d158;
-  --red:     #ff453a;
-  --text:    #f0f0f5;
-  --muted:   #8e8e9a;
-  --border:  rgba(255,255,255,0.08);
-  --radius:  14px;
-  --safe-t:  env(safe-area-inset-top,0px);
-  --safe-b:  env(safe-area-inset-bottom,0px);
+  --bg:#0f0f12; --card:#1c1c22; --card2:#26262e;
+  --accent:#7c6af7; --green:#30d158; --red:#ff453a;
+  --text:#f0f0f5; --muted:#8e8e9a; --border:rgba(255,255,255,0.08);
+  --radius:14px;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro Text', sans-serif; overscroll-behavior: none; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,'SF Pro Text',sans-serif;overscroll-behavior:none;}
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-t);}
+.header{padding:14px 18px 10px;border-bottom:0.5px solid var(--border);flex-shrink:0;}
+.header h1{font-size:20px;font-weight:700;letter-spacing:-.4px;}
+.header h1 span{color:var(--accent);}
+.tabs{display:flex;background:var(--card);border-radius:10px;padding:3px;margin-top:12px;}
+.tab{flex:1;text-align:center;padding:8px;font-size:14px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all .2s;}
+.tab.active{background:var(--accent);color:#fff;}
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;}
+.view.active{display:block;}
 
-/* ── layout ── */
-#app { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-t); }
-.header { padding: 14px 18px 10px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-.header h1 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; }
-.header h1 span { color: var(--accent); }
-.tabs { display: flex; background: var(--card); border-radius: 10px; padding: 3px; margin-top: 12px; }
-.tab { flex: 1; text-align: center; padding: 8px; font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer; color: var(--muted); transition: all .2s; }
-.tab.active { background: var(--accent); color: #fff; }
-.view { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: none; }
-.view.active { display: block; }
+/* status bar */
+.status-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);margin:12px 16px 0;border-radius:10px;font-size:13px;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--muted);}
+.status-dot.loading{background:#f9a825;animation:pulse 1s infinite;}
+.status-dot.ready{background:var(--green);}
+.status-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-/* ── scanner view ── */
-.scan-wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(16px + var(--safe-b)); }
+.scan-wrap{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(16px + var(--safe-b));}
+.img-area{background:var(--card);border-radius:var(--radius);border:1.5px dashed var(--border);min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;position:relative;overflow:hidden;}
+.img-area img{width:100%;height:100%;object-fit:contain;border-radius:var(--radius);}
+.placeholder{text-align:center;pointer-events:none;}
+.placeholder .icon{font-size:36px;display:block;margin-bottom:6px;}
+.placeholder p{color:var(--muted);font-size:14px;}
+.img-btns{position:absolute;bottom:10px;right:10px;display:flex;gap:6px;}
+.img-btn{background:rgba(0,0,0,.65);backdrop-filter:blur(10px);border:none;border-radius:8px;padding:7px 12px;color:#fff;font-size:12px;cursor:pointer;}
 
-.img-area { background: var(--card); border-radius: var(--radius); border: 1.5px dashed var(--border); min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; position: relative; overflow: hidden; }
-.img-area img { width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius); }
-.img-area .placeholder { text-align: center; pointer-events: none; }
-.img-area .placeholder .icon { font-size: 40px; display: block; margin-bottom: 6px; }
-.img-area .placeholder p { color: var(--muted); font-size: 14px; }
-.img-area .img-btns { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; }
-.img-btn { background: rgba(0,0,0,.6); backdrop-filter: blur(10px); border: none; border-radius: 8px; padding: 7px 12px; color: #fff; font-size: 12px; cursor: pointer; }
+.btn-row{display:flex;gap:8px;}
+.btn{flex:1;padding:14px;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;background:var(--card2);color:var(--text);}
+.btn:active{transform:scale(.97);opacity:.85;}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-green{background:var(--green);color:#000;}
+.btn:disabled{opacity:.35;pointer-events:none;}
 
-.btn-row { display: flex; gap: 10px; }
-.btn { flex: 1; padding: 14px; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s, transform .1s; }
-.btn:active { transform: scale(.97); opacity: .85; }
-.btn-accent { background: var(--accent); color: #fff; }
-.btn-green  { background: var(--green);  color: #000; }
-.btn-muted  { background: var(--card2);  color: var(--text); }
-.btn:disabled { opacity: .35; pointer-events: none; }
-
-/* progress */
-.progress-wrap { display: none; }
-.progress-wrap.show { display: block; }
-.progress-bar { height: 3px; background: var(--card2); border-radius: 99px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--accent); border-radius: 99px; width: 0%; transition: width .3s; }
-.progress-label { text-align: center; font-size: 12px; color: var(--muted); margin-top: 6px; }
+/* raw text box */
+.raw-wrap{background:var(--card);border-radius:var(--radius);overflow:hidden;}
+.raw-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:0.5px solid var(--border);}
+.raw-header span{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+.raw-header button{font-size:12px;background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;}
+.raw-text{width:100%;min-height:80px;max-height:160px;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Menlo',monospace;padding:12px 14px;resize:none;overflow-y:auto;}
+.raw-text::placeholder{color:var(--muted);}
 
 /* fields */
-.fields-card { background: var(--card); border-radius: var(--radius); overflow: hidden; }
-.fields-card .field-row { display: flex; align-items: flex-start; border-bottom: 0.5px solid var(--border); padding: 0; }
-.fields-card .field-row:last-child { border-bottom: none; }
-.field-label { padding: 12px 10px 12px 14px; font-size: 12px; color: var(--muted); font-weight: 500; min-width: 80px; flex-shrink: 0; padding-top: 14px; }
-.field-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 15px; padding: 12px 14px 12px 0; width: 100%; font-family: inherit; resize: none; }
-.field-input::placeholder { color: var(--border); }
+.fields-card{background:var(--card);border-radius:var(--radius);overflow:hidden;}
+.field-row{display:flex;align-items:flex-start;border-bottom:0.5px solid var(--border);}
+.field-row:last-child{border-bottom:none;}
+.field-label{padding:13px 10px 13px 14px;font-size:12px;color:var(--muted);font-weight:500;min-width:82px;flex-shrink:0;}
+.field-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:12px 14px 12px 0;width:100%;font-family:inherit;resize:none;}
 
-/* ── contacts view ── */
-.contacts-wrap { padding: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(16px + var(--safe-b)); }
-.search-bar { background: var(--card); border-radius: 10px; border: none; outline: none; color: var(--text); font-size: 15px; padding: 12px 16px; width: 100%; font-family: inherit; }
-.search-bar::placeholder { color: var(--muted); }
-.contacts-list { display: flex; flex-direction: column; gap: 10px; }
-.contact-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; position: relative; }
-.contact-card .c-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-.contact-card .c-company { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
-.contact-card .c-details { font-size: 13px; color: var(--muted); line-height: 1.7; }
-.contact-card .c-del { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 4px; }
-.empty-state { text-align: center; padding: 48px 0; color: var(--muted); }
-.empty-state .e-icon { font-size: 48px; display: block; margin-bottom: 12px; }
-.export-row { display: flex; gap: 10px; }
-.count-badge { background: var(--card2); border-radius: 8px; padding: 10px 16px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.count-badge strong { color: var(--text); }
+/* contacts */
+.contacts-wrap{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:calc(16px + var(--safe-b));}
+.search-bar{background:var(--card);border-radius:10px;border:none;outline:none;color:var(--text);font-size:15px;padding:12px 16px;width:100%;font-family:inherit;}
+.search-bar::placeholder{color:var(--muted);}
+.contact-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;position:relative;}
+.c-name{font-size:16px;font-weight:600;margin-bottom:2px;}
+.c-company{font-size:13px;color:var(--accent);margin-bottom:8px;}
+.c-details{font-size:13px;color:var(--muted);line-height:1.8;}
+.c-del{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px;}
+.empty-state{text-align:center;padding:48px 0;color:var(--muted);}
+.empty-state .e-icon{font-size:48px;display:block;margin-bottom:12px;}
+.export-row{display:flex;gap:10px;}
+.count-badge{background:var(--card2);border-radius:8px;padding:10px 16px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.count-badge strong{color:var(--text);}
 
-/* ── toast ── */
-.toast { position: fixed; bottom: calc(30px + var(--safe-b)); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card2); color: var(--text); padding: 10px 20px; border-radius: 99px; font-size: 14px; opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap; z-index: 999; }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast{position:fixed;bottom:calc(30px + var(--safe-b));left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);color:var(--text);padding:10px 20px;border-radius:99px;font-size:14px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:999;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ── init overlay ── */
-#init-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
-#init-overlay .o-icon { font-size: 56px; }
-#init-overlay p { color: var(--muted); font-size: 14px; text-align: center; max-width: 260px; line-height: 1.6; }
-.spinner { width: 28px; height: 28px; border: 2.5px solid var(--card2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+#init-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;padding:24px;}
+#init-overlay .o-icon{font-size:56px;}
+#init-overlay p{color:var(--muted);font-size:14px;text-align:center;max-width:280px;line-height:1.7;}
+#init-overlay .o-progress{width:240px;height:3px;background:var(--card2);border-radius:99px;overflow:hidden;}
+#init-overlay .o-fill{height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .4s;}
+.btn-retry{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:15px;font-weight:600;cursor:pointer;display:none;}
 </style>
 </head>
 <body>
 
 <div id="init-overlay">
   <div class="o-icon">🪪</div>
-  <div class="spinner"></div>
-  <p id="init-msg">Загружаем OCR-движок…<br>Первый запуск занимает ~30 сек</p>
+  <div class="o-progress"><div class="o-fill" id="o-fill"></div></div>
+  <p id="init-msg">Загружаем OCR-движок…<br><small>Первый раз ~30–60 сек, нужен интернет</small></p>
+  <button class="btn-retry" id="btn-retry" onclick="retryInit()">🔄 Попробовать снова</button>
 </div>
 
 <div id="app">
@@ -116,29 +112,40 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     </div>
   </div>
 
-  <!-- ── SCAN VIEW ── -->
+  <!-- SCAN VIEW -->
   <div class="view active" id="view-scan">
+
+    <!-- engine status -->
+    <div class="status-bar">
+      <div class="status-dot loading" id="status-dot"></div>
+      <span id="status-text">Загружаем OCR-движок…</span>
+    </div>
+
     <div class="scan-wrap">
 
       <div class="img-area" id="img-area">
         <div class="placeholder">
           <span class="icon">📷</span>
-          <p>Нажмите, чтобы выбрать фото</p>
+          <p>Нажмите чтобы выбрать фото</p>
         </div>
       </div>
 
       <div class="btn-row">
-        <button class="btn btn-muted" onclick="triggerCamera()">📷 Камера</button>
-        <button class="btn btn-muted" onclick="triggerGallery()">🖼 Галерея</button>
+        <button class="btn" onclick="triggerCamera()">📷 Камера</button>
+        <button class="btn" onclick="triggerGallery()">🖼 Галерея</button>
         <button class="btn btn-accent" id="btn-ocr" disabled onclick="runOCR()">🔍 Сканировать</button>
       </div>
 
-      <div class="progress-wrap" id="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-        <div class="progress-label" id="progress-label">Инициализация…</div>
+      <!-- raw OCR text — visible, editable -->
+      <div class="raw-wrap">
+        <div class="raw-header">
+          <span>Распознанный текст</span>
+          <button onclick="reparseManual()">↻ Разобрать поля</button>
+        </div>
+        <textarea class="raw-text" id="raw-text" placeholder="Здесь появится текст после сканирования…"></textarea>
       </div>
 
-      <div class="fields-card" id="fields-card">
+      <div class="fields-card">
         <div class="field-row"><span class="field-label">Имя</span><input class="field-input" id="f-name" placeholder="—" type="text"></div>
         <div class="field-row"><span class="field-label">Компания</span><input class="field-input" id="f-company" placeholder="—" type="text"></div>
         <div class="field-row"><span class="field-label">Должность</span><input class="field-input" id="f-title" placeholder="—" type="text"></div>
@@ -149,21 +156,21 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="field-row"><span class="field-label">Заметки</span><textarea class="field-input" id="f-notes" rows="2" placeholder="—"></textarea></div>
       </div>
 
-      <button class="btn btn-green" id="btn-add" onclick="addContact()">➕ Добавить в контакты</button>
-      <button class="btn btn-muted" onclick="clearScan()">🧹 Очистить</button>
+      <button class="btn btn-green" onclick="addContact()">➕ Добавить в контакты</button>
+      <button class="btn" onclick="clearScan()">🧹 Очистить</button>
 
     </div>
   </div>
 
-  <!-- ── CONTACTS VIEW ── -->
+  <!-- CONTACTS VIEW -->
   <div class="view" id="view-contacts">
     <div class="contacts-wrap">
-      <input class="search-bar" type="search" placeholder="🔍 Поиск по имени, компании…" oninput="renderContacts(this.value)">
+      <input class="search-bar" type="search" placeholder="🔍 Поиск…" oninput="renderContacts(this.value)">
       <div class="export-row">
         <div class="count-badge">Всего: <strong id="cnt2">0</strong></div>
         <button class="btn btn-accent" style="flex:1" onclick="exportCSV()">📄 Экспорт CSV</button>
       </div>
-      <div class="contacts-list" id="contacts-list"></div>
+      <div id="contacts-list"></div>
     </div>
   </div>
 </div>
@@ -172,29 +179,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <input type="file" id="input-camera"  accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
 <input type="file" id="input-gallery" accept="image/*" style="display:none" onchange="handleFile(this)">
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
-// ── state ──────────────────────────────────────────────────────────────────
-let contacts = [];
-let worker   = null;
-let imgData  = null;
-
-const FIELDS = ['name','company','title','phone','email','web','country','notes'];
-const f = id => document.getElementById('f-' + id);
-
 // ── IndexedDB ──────────────────────────────────────────────────────────────
 const DB = (() => {
   let db;
-  const open = () => new Promise((res, rej) => {
-    const r = indexedDB.open('CardScanner', 1);
-    r.onupgradeneeded = e => e.target.result.createObjectStore('c', {keyPath:'id',autoIncrement:true});
-    r.onsuccess = e => { db = e.target.result; res(); };
+  const open = () => new Promise((res,rej) => {
+    const r = indexedDB.open('CardScanner',1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('c',{keyPath:'id',autoIncrement:true});
+    r.onsuccess = e => { db=e.target.result; res(); };
     r.onerror = rej;
   });
-  const all  = () => new Promise((res,rej) => { const r = db.transaction('c').objectStore('c').getAll(); r.onsuccess=()=>res(r.result); r.onerror=rej; });
-  const add  = d  => new Promise((res,rej) => { const r = db.transaction('c','readwrite').objectStore('c').add(d); r.onsuccess=()=>res(r.result); r.onerror=rej; });
-  const del  = id => new Promise((res,rej) => { const r = db.transaction('c','readwrite').objectStore('c').delete(id); r.onsuccess=res; r.onerror=rej; });
-  return { open, all, add, del };
+  const all = () => new Promise((res,rej) => {
+    const r = db.transaction('c').objectStore('c').getAll();
+    r.onsuccess=()=>res(r.result); r.onerror=rej;
+  });
+  const add = d => new Promise((res,rej) => {
+    const r = db.transaction('c','readwrite').objectStore('c').add(d);
+    r.onsuccess=()=>res(r.result); r.onerror=rej;
+  });
+  const del = id => new Promise((res,rej) => {
+    const r = db.transaction('c','readwrite').objectStore('c').delete(id);
+    r.onsuccess=res; r.onerror=rej;
+  });
+  return {open,all,add,del};
 })();
 
 // ── parser ─────────────────────────────────────────────────────────────────
@@ -203,73 +210,135 @@ function parseCard(text) {
   const emailM = text.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
   if (emailM) d.email = emailM[0];
 
-  const phones = [...text.matchAll(/(\+?[\d\s\-().]{8,22})/g)]
+  const allPhones = [...text.matchAll(/(\+?[\d][\d\s\-().]{6,20})/g)]
     .map(m => m[1].trim())
     .filter(p => p.replace(/\D/g,'').length >= 7);
-  if (phones.length) d.phone = phones[0];
+  if (allPhones.length) d.phone = allPhones[0];
 
   const urlM = text.match(/(?:https?:\/\/|www\.)\S+/i);
-  if (urlM) d.web = urlM[0].replace(/[.,]+$/, '');
+  if (urlM) d.web = urlM[0].replace(/[.,)]+$/,'');
 
-  const companyKW = ['Co.,','Ltd.','Corp.','Inc.','LLC','GmbH','株式会社','주식회사','有限公司','B&H','Clinic','Labo'];
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const compKW = ['Co.,','Ltd.','Corp.','Inc.','LLC','GmbH','B&H',
+    '株式会社','합자회사','주식회사','有限公司','Clinic','Labo','Corporation'];
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
   for (const l of lines) {
-    if (companyKW.some(k => l.includes(k))) { d.company = l; break; }
+    if (compKW.some(k=>l.includes(k))) { d.company=l; break; }
   }
 
-  for (const [kw, country] of [['JAPAN','Japan'],['KOREA','Korea'],['CHINA','China'],['FRANCE','France'],['USA','USA']]) {
-    if (text.toUpperCase().includes(kw)) { d.country = country; break; }
+  for (const [kw,country] of [['JAPAN','Japan'],['KOREA','Korea'],
+      ['CHINA','China'],['FRANCE','France'],['USA','USA']]) {
+    if (text.toUpperCase().includes(kw)) { d.country=country; break; }
   }
 
-  const skip = /^(TEL|FAX|URL|HP|MOB|EMAIL|WWW|HTTP|〒|©|\+)/i;
+  const skipRe = /^(TEL|FAX|URL|HP|MOB|EMAIL|WWW|HTTP|〒|©|\+\d)/i;
   for (const l of lines) {
     const words = l.split(/\s+/).filter(Boolean);
-    if (words.length >= 1 && words.length <= 5
-        && !companyKW.some(k => l.includes(k))
+    if (words.length>=1 && words.length<=5
+        && !compKW.some(k=>l.includes(k))
         && !/[@\d\\/]/.test(l)
-        && !skip.test(l)
-        && l.length > 2) {
-      d.name = l; break;
+        && !skipRe.test(l)
+        && l.length>2) {
+      d.name=l; break;
     }
   }
   return d;
 }
 
-// ── OCR ────────────────────────────────────────────────────────────────────
-async function initWorker() {
-  document.getElementById('init-msg').textContent = 'Загружаем языковые пакеты…\nАнглийский, Русский, Японский, Корейский';
-  worker = await Tesseract.createWorker(['eng','rus','jpn','kor'], 1, {
-    logger: m => {
-      if (m.status === 'loading tesseract core') setProgress(10, 'Загрузка ядра…');
-      if (m.status === 'initializing tesseract')  setProgress(20, 'Инициализация…');
-      if (m.status === 'loading language traineddata') setProgress(40, `Загрузка языков… ${Math.round((m.progress||0)*60)}%`);
-      if (m.status === 'initializing api') setProgress(90, 'Почти готово…');
-    }
-  });
-  document.getElementById('init-overlay').style.display = 'none';
+// ── state ──────────────────────────────────────────────────────────────────
+let contacts=[], worker=null, imgData=null, workerReady=false;
+const FIELDS=['name','company','title','phone','email','web','country','notes'];
+const f = id => document.getElementById('f-'+id);
+
+// ── status ─────────────────────────────────────────────────────────────────
+function setStatus(state, msg) {
+  // state: 'loading' | 'ready' | 'error'
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = 'status-dot ' + state;
+  text.textContent = msg;
 }
 
-async function runOCR() {
-  if (!imgData || !worker) return;
-  showProgress(true);
-  setProgress(0, 'Распознавание текста…');
-  document.getElementById('btn-ocr').disabled = true;
+// ── Tesseract init ─────────────────────────────────────────────────────────
+async function initWorker() {
+  const fill = document.getElementById('o-fill');
+  const msg  = document.getElementById('init-msg');
+  setStatus('loading','Загружаем OCR-движок…');
+
   try {
-    const { data: { text } } = await worker.recognize(imgData, {}, {
+    // Tesseract.js v4 API (more compatible with Safari)
+    worker = await Tesseract.createWorker({
       logger: m => {
-        if (m.status === 'recognizing text') setProgress(Math.round((m.progress||0)*100), 'Распознавание…');
+        if (m.status==='loading tesseract core')         { fill.style.width='15%'; msg.textContent='Загружаем ядро…'; }
+        if (m.status==='initializing tesseract')         { fill.style.width='30%'; msg.textContent='Инициализация…'; }
+        if (m.status==='loading language traineddata')   {
+          const pct = 30 + Math.round((m.progress||0)*50);
+          fill.style.width = pct+'%';
+          msg.textContent = 'Загружаем языки… '+pct+'%';
+        }
+        if (m.status==='initializing api')               { fill.style.width='90%'; msg.textContent='Почти готово…'; }
       }
     });
+
+    await worker.loadLanguage('eng+rus+jpn+kor');
+    await worker.initialize('eng+rus+jpn+kor');
+
+    fill.style.width = '100%';
+    workerReady = true;
+    document.getElementById('init-overlay').style.display = 'none';
+    setStatus('ready','OCR готов — eng / rus / jpn / kor');
+    updateScanBtn();
+
+  } catch(err) {
+    console.error('Tesseract init error:', err);
+    msg.innerHTML = '❌ Ошибка загрузки OCR:<br><small>'+err.message+'</small><br><small>Проверь интернет и попробуй снова</small>';
+    document.getElementById('btn-retry').style.display = 'block';
+    fill.style.width='0%';
+    setStatus('error','OCR не загружен — нет интернета?');
+  }
+}
+
+async function retryInit() {
+  document.getElementById('btn-retry').style.display='none';
+  document.getElementById('o-fill').style.width='0%';
+  if (worker) { try { await worker.terminate(); } catch(e){} }
+  worker = null; workerReady = false;
+  await initWorker();
+}
+
+// ── OCR ────────────────────────────────────────────────────────────────────
+async function runOCR() {
+  if (!imgData) { toast('⚠ Сначала выбери фото'); return; }
+  if (!workerReady || !worker) {
+    toast('⏳ OCR ещё загружается, подожди…');
+    setStatus('loading','Загружаем OCR-движок…');
+    return;
+  }
+
+  setStatus('loading','Распознавание…');
+  document.getElementById('btn-ocr').disabled = true;
+  document.getElementById('raw-text').value = 'Идёт распознавание…';
+
+  try {
+    const { data: { text } } = await worker.recognize(imgData);
+    document.getElementById('raw-text').value = text.trim() || '(текст не обнаружен)';
     const parsed = parseCard(text);
-    FIELDS.forEach(k => { if (f(k)) f(k).value = parsed[k] || ''; });
-    setProgress(100, 'Готово!');
-    setTimeout(() => showProgress(false), 800);
-    toast('✅ Текст распознан — проверьте поля');
-  } catch(e) {
-    toast('❌ Ошибка OCR: ' + e.message);
-    showProgress(false);
+    FIELDS.forEach(k => { if(f(k)) f(k).value = parsed[k]||''; });
+    setStatus('ready','Готово! Проверь и отредактируй поля.');
+    toast('✅ Готово — проверь поля');
+  } catch(err) {
+    document.getElementById('raw-text').value = 'Ошибка: '+err.message;
+    setStatus('error','Ошибка OCR: '+err.message);
+    toast('❌ Ошибка: '+err.message);
   }
   document.getElementById('btn-ocr').disabled = false;
+}
+
+function reparseManual() {
+  const text = document.getElementById('raw-text').value;
+  if (!text || text==='Идёт распознавание…') { toast('⚠ Нет текста для разбора'); return; }
+  const parsed = parseCard(text);
+  FIELDS.forEach(k => { if(f(k)) f(k).value = parsed[k]||''; });
+  toast('✅ Поля обновлены');
 }
 
 // ── image ──────────────────────────────────────────────────────────────────
@@ -287,139 +356,117 @@ function handleFile(input) {
       <button class="img-btn" onclick="triggerCamera()">📷</button>
       <button class="img-btn" onclick="triggerGallery()">🖼</button>
     </div>`;
-  document.getElementById('btn-ocr').disabled = false;
-  input.value = '';
+  updateScanBtn();
+  input.value='';
+}
+
+function updateScanBtn() {
+  document.getElementById('btn-ocr').disabled = !(imgData && workerReady);
 }
 
 // ── contacts ───────────────────────────────────────────────────────────────
 async function addContact() {
-  const c = {};
-  FIELDS.forEach(k => { c[k] = f(k) ? f(k).value.trim() : ''; });
+  const c={};
+  FIELDS.forEach(k=>{ c[k]=f(k)?f(k).value.trim():''; });
   if (!Object.values(c).some(Boolean)) { toast('⚠ Все поля пусты'); return; }
-  c.ts = Date.now();
-  const id = await DB.add(c);
-  c.id = id;
+  c.ts=Date.now();
+  const id=await DB.add(c); c.id=id;
   contacts.push(c);
-  updateCount();
-  renderContacts();
+  updateCount(); renderContacts();
   clearScan();
   switchView('contacts');
-  toast('✅ Контакт добавлен');
+  toast('✅ Контакт сохранён');
 }
 
 async function deleteContact(id) {
   if (!confirm('Удалить контакт?')) return;
   await DB.del(id);
-  contacts = contacts.filter(c => c.id !== id);
-  updateCount();
-  renderContacts();
+  contacts=contacts.filter(c=>c.id!==id);
+  updateCount(); renderContacts();
 }
 
-function renderContacts(search = '') {
-  const list = document.getElementById('contacts-list');
-  const q = search.toLowerCase();
-  const filtered = contacts.filter(c =>
-    !q || (c.name||'').toLowerCase().includes(q) ||
-           (c.company||'').toLowerCase().includes(q) ||
-           (c.email||'').toLowerCase().includes(q)
-  );
+function renderContacts(search='') {
+  const list=document.getElementById('contacts-list');
+  const q=search.toLowerCase();
+  const filtered=contacts.filter(c=>
+    !q||(c.name||'').toLowerCase().includes(q)||
+    (c.company||'').toLowerCase().includes(q)||
+    (c.email||'').toLowerCase().includes(q));
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><span class="e-icon">📭</span><p>${search ? 'Ничего не найдено' : 'Контактов пока нет'}</p></div>`;
+    list.innerHTML=`<div class="empty-state"><span class="e-icon">📭</span><p>${search?'Ничего не найдено':'Контактов пока нет'}</p></div>`;
     return;
   }
-  list.innerHTML = filtered.map(c => `
+  list.innerHTML=filtered.map(c=>`
     <div class="contact-card">
       <button class="c-del" onclick="deleteContact(${c.id})">✕</button>
-      <div class="c-name">${esc(c.name || '—')}</div>
-      <div class="c-company">${esc(c.company || '')}</div>
+      <div class="c-name">${esc(c.name||'—')}</div>
+      <div class="c-company">${esc(c.company||'')}</div>
       <div class="c-details">
-        ${c.title   ? `💼 ${esc(c.title)}<br>`   : ''}
-        ${c.phone   ? `📞 ${esc(c.phone)}<br>`   : ''}
-        ${c.email   ? `✉️ ${esc(c.email)}<br>`   : ''}
-        ${c.web     ? `🌐 ${esc(c.web)}<br>`     : ''}
-        ${c.country ? `🌍 ${esc(c.country)}<br>` : ''}
-        ${c.notes   ? `📝 ${esc(c.notes)}`       : ''}
+        ${c.title?`💼 ${esc(c.title)}<br>`:''}
+        ${c.phone?`📞 ${esc(c.phone)}<br>`:''}
+        ${c.email?`✉️ ${esc(c.email)}<br>`:''}
+        ${c.web?`🌐 ${esc(c.web)}<br>`:''}
+        ${c.country?`🌍 ${esc(c.country)}<br>`:''}
+        ${c.notes?`📝 ${esc(c.notes)}`:''}
       </div>
     </div>`).join('');
 }
 
 function updateCount() {
-  const n = contacts.length;
-  document.getElementById('cnt').textContent  = n;
-  document.getElementById('cnt2').textContent = n;
+  const n=contacts.length;
+  document.getElementById('cnt').textContent=n;
+  document.getElementById('cnt2').textContent=n;
 }
 
 // ── export ─────────────────────────────────────────────────────────────────
 function exportCSV() {
-  if (!contacts.length) { toast('⚠ Нет контактов для экспорта'); return; }
-  const hdr = ['Name','Company','Title','Phone','Email','Website','Country','Notes'];
-  const keys = ['name','company','title','phone','email','web','country','notes'];
-  const rows = [hdr, ...contacts.map(c => keys.map(k => `"${(c[k]||'').replace(/"/g,'""')}"`))];
-  const csv  = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
-  const url  = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  const a    = Object.assign(document.createElement('a'), {href:url, download:`contacts_${ts()}.csv`});
-  a.click();
-  URL.revokeObjectURL(url);
+  if (!contacts.length) { toast('⚠ Нет контактов'); return; }
+  const hdr=['Name','Company','Title','Phone','Email','Website','Country','Notes'];
+  const keys=['name','company','title','phone','email','web','country','notes'];
+  const rows=[hdr,...contacts.map(c=>keys.map(k=>`"${(c[k]||'').replace(/"/g,'""')}"`))];
+  const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=Object.assign(document.createElement('a'),{href:url,download:`contacts_${Date.now()}.csv`});
+  a.click(); URL.revokeObjectURL(url);
   toast('✅ CSV сохранён');
 }
 
 // ── ui helpers ─────────────────────────────────────────────────────────────
 function switchView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
   document.querySelector(`[data-view="${name}"]`).classList.add('active');
 }
-
-document.querySelectorAll('.tab').forEach(t =>
-  t.addEventListener('click', () => switchView(t.dataset.view)));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
 
 function clearScan() {
-  FIELDS.forEach(k => { if (f(k)) f(k).value = ''; });
-  imgData = null;
-  document.getElementById('img-area').innerHTML = `
-    <div class="placeholder">
-      <span class="icon">📷</span><p>Нажмите, чтобы выбрать фото</p>
-    </div>`;
-  document.getElementById('btn-ocr').disabled = true;
-  showProgress(false);
+  FIELDS.forEach(k=>{if(f(k))f(k).value='';});
+  imgData=null;
+  document.getElementById('img-area').innerHTML=`<div class="placeholder"><span class="icon">📷</span><p>Нажмите чтобы выбрать фото</p></div>`;
+  document.getElementById('raw-text').value='';
+  updateScanBtn();
 }
-
-document.getElementById('img-area').addEventListener('click', () => {
-  if (!imgData) triggerGallery();
-});
-
-function showProgress(show) {
-  document.getElementById('progress-wrap').classList.toggle('show', show);
-}
-function setProgress(pct, label) {
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-label').textContent = label;
-}
+document.getElementById('img-area').addEventListener('click',()=>{if(!imgData)triggerGallery();});
 
 let toastTimer;
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
-
-const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const ts   = () => new Date().toISOString().slice(0,16).replace('T','_').replace(':','');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 // ── init ───────────────────────────────────────────────────────────────────
-(async () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
+(async()=>{
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   await DB.open();
-  contacts = await DB.all();
-  updateCount();
-  renderContacts();
+  contacts=await DB.all();
+  updateCount(); renderContacts();
   await initWorker();
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 </body>
 </html>
