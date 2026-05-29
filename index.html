@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Card Scanner">
+<link rel="manifest" href="manifest.json">
+<title>Card Scanner</title>
+<style>
+:root{
+  --bg:#0a0a0f;--card:#16161e;--card2:#1e1e28;--card3:#24242f;
+  --accent:#7c6af7;--accent2:#a594f9;
+  --green:#30d158;--red:#ff453a;--orange:#ff9f0a;--blue:#0a84ff;
+  --text:#f0f0f5;--muted:#8e8e9a;--border:rgba(255,255,255,0.07);
+  --radius:14px;--radius-sm:10px;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,20px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;overscroll-behavior:none;}
+
+/* ── layout ── */
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-t);}
+.header{padding:16px 18px 0;flex-shrink:0;}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px;}
+.logo span{color:var(--accent);}
+.tabs{display:flex;background:var(--card);border-radius:var(--radius-sm);padding:3px;gap:2px;}
+.tab{flex:1;text-align:center;padding:8px 4px;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;color:var(--muted);transition:all .2s;white-space:nowrap;}
+.tab.active{background:var(--accent);color:#fff;}
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding-bottom:calc(16px + var(--safe-b));}
+.view.active{display:block;}
+
+/* ── setup screen ── */
+#setup-screen{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px;}
+.setup-icon{font-size:64px;line-height:1;}
+.setup-title{font-size:24px;font-weight:700;text-align:center;letter-spacing:-.4px;}
+.setup-subtitle{font-size:14px;color:var(--muted);text-align:center;line-height:1.6;max-width:300px;}
+.setup-card{background:var(--card);border-radius:var(--radius);padding:20px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;}
+.setup-label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+.setup-input{background:var(--card2);border:0.5px solid var(--border);outline:none;color:var(--text);font-size:14px;font-family:inherit;padding:12px 14px;border-radius:var(--radius-sm);width:100%;transition:border-color .2s;}
+.setup-input:focus{border-color:var(--accent);}
+.setup-hint{font-size:12px;color:var(--muted);line-height:1.6;}
+.setup-hint a{color:var(--accent);text-decoration:none;}
+.setup-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:14px;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s;}
+.setup-btn:active{opacity:.8;}
+.setup-btn:disabled{opacity:.4;pointer-events:none;}
+.setup-skip{font-size:13px;color:var(--muted);cursor:pointer;text-align:center;}
+.setup-skip:hover{color:var(--text);}
+
+/* ── scan view ── */
+.scan-wrap{padding:12px 16px;display:flex;flex-direction:column;gap:12px;}
+
+/* image area */
+.img-area{background:var(--card);border-radius:var(--radius);border:1.5px dashed rgba(124,106,247,.3);min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s;}
+.img-area:hover{border-color:rgba(124,106,247,.6);}
+.img-area img{width:100%;height:100%;object-fit:contain;border-radius:var(--radius);}
+.img-placeholder{text-align:center;pointer-events:none;padding:24px;}
+.img-placeholder .big-icon{font-size:44px;display:block;margin-bottom:8px;}
+.img-placeholder p{color:var(--muted);font-size:14px;}
+.img-placeholder small{color:rgba(142,142,154,.5);font-size:12px;margin-top:4px;display:block;}
+.img-overlay{position:absolute;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px;background:linear-gradient(transparent,rgba(0,0,0,.6));}
+.img-btn{flex:1;background:rgba(255,255,255,.15);backdrop-filter:blur(12px);border:none;border-radius:8px;padding:8px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
+
+/* status pill */
+.status-pill{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-radius:var(--radius-sm);font-size:13px;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.status-dot.idle{background:var(--muted);}
+.status-dot.loading{background:var(--orange);animation:pulse 1s infinite;}
+.status-dot.ready{background:var(--green);}
+.status-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* progress bar */
+.progress-wrap{height:3px;background:var(--card2);border-radius:99px;overflow:hidden;display:none;}
+.progress-wrap.show{display:block;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;width:0%;transition:width .4s ease;}
+
+/* buttons */
+.btn-row{display:flex;gap:8px;}
+.btn{flex:1;padding:13px;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--card2);color:var(--text);}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.3;pointer-events:none;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-green{background:var(--green);color:#000;}
+.btn-outline{background:transparent;border:0.5px solid var(--border);color:var(--muted);}
+
+/* raw text */
+.section-card{background:var(--card);border-radius:var(--radius);overflow:hidden;}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:0.5px solid var(--border);}
+.section-title{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.section-action{font-size:12px;color:var(--accent);cursor:pointer;background:none;border:none;padding:2px 6px;}
+.raw-text{width:100%;min-height:90px;max-height:160px;background:transparent;border:none;outline:none;color:var(--text);font-size:12px;font-family:'Menlo','SF Mono',monospace;padding:12px 14px;resize:none;overflow-y:auto;line-height:1.5;}
+.raw-text::placeholder{color:rgba(142,142,154,.4);}
+
+/* fields */
+.field-row{display:flex;align-items:flex-start;border-bottom:0.5px solid var(--border);}
+.field-row:last-child{border-bottom:none;}
+.field-label{padding:13px 8px 13px 14px;font-size:11px;color:var(--muted);font-weight:500;min-width:76px;flex-shrink:0;text-transform:uppercase;letter-spacing:.03em;}
+.field-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;padding:12px 14px 12px 0;width:100%;font-family:inherit;resize:none;}
+.field-input::placeholder{color:rgba(142,142,154,.3);}
+
+/* ── contacts view ── */
+.contacts-wrap{padding:12px 16px;display:flex;flex-direction:column;gap:12px;}
+.search-input{background:var(--card);border:none;outline:none;color:var(--text);font-size:15px;padding:12px 16px;border-radius:var(--radius-sm);width:100%;font-family:inherit;}
+.search-input::placeholder{color:var(--muted);}
+.stats-row{display:flex;gap:8px;}
+.stat-chip{background:var(--card);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--muted);flex:1;text-align:center;}
+.stat-chip strong{color:var(--text);display:block;font-size:18px;font-weight:700;}
+.contacts-list{display:flex;flex-direction:column;gap:8px;}
+.contact-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;position:relative;transition:background .15s;}
+.contact-card:active{background:var(--card2);}
+.c-name{font-size:16px;font-weight:600;margin-bottom:2px;padding-right:28px;}
+.c-company{font-size:13px;color:var(--accent);margin-bottom:8px;}
+.c-row{font-size:13px;color:var(--muted);line-height:1.9;display:flex;flex-direction:column;gap:1px;}
+.c-del{position:absolute;top:12px;right:12px;background:none;border:none;color:rgba(255,69,58,.5);font-size:16px;cursor:pointer;padding:4px;transition:color .15s;}
+.c-del:hover{color:var(--red);}
+.empty-state{text-align:center;padding:48px 0;color:var(--muted);}
+.empty-icon{font-size:44px;display:block;margin-bottom:10px;}
+.export-btns{display:flex;gap:8px;}
+
+/* ── settings view ── */
+.settings-wrap{padding:12px 16px;display:flex;flex-direction:column;gap:16px;}
+.settings-section{background:var(--card);border-radius:var(--radius);overflow:hidden;}
+.settings-section-title{padding:12px 16px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:0.5px solid var(--border);}
+.settings-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:0.5px solid var(--border);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row-text{flex:1;}
+.settings-row-text label{font-size:15px;display:block;}
+.settings-row-text small{font-size:12px;color:var(--muted);margin-top:2px;display:block;line-height:1.5;}
+.key-input-wrap{padding:14px 16px;display:flex;flex-direction:column;gap:8px;}
+.key-input{background:var(--card2);border:0.5px solid var(--border);outline:none;color:var(--text);font-size:13px;font-family:'Menlo',monospace;padding:11px 13px;border-radius:var(--radius-sm);width:100%;transition:border-color .2s;}
+.key-input:focus{border-color:var(--accent);}
+.key-save-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-size:14px;font-weight:600;cursor:pointer;width:100%;}
+.key-status{font-size:12px;padding:8px 12px;border-radius:8px;text-align:center;}
+.key-status.ok{background:rgba(48,209,88,.15);color:var(--green);}
+.key-status.none{background:rgba(255,159,10,.1);color:var(--orange);}
+.info-box{background:rgba(124,106,247,.08);border:0.5px solid rgba(124,106,247,.2);border-radius:var(--radius-sm);padding:14px;font-size:13px;color:rgba(165,148,249,.9);line-height:1.7;}
+
+/* ── toast ── */
+.toast{position:fixed;bottom:calc(28px + var(--safe-b));left:50%;transform:translateX(-50%) translateY(16px);background:var(--card3);color:var(--text);padding:10px 20px;border-radius:99px;font-size:14px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.4);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setup-screen">
+  <div class="setup-icon">🪪</div>
+  <div class="setup-title">Card Scanner</div>
+  <div class="setup-subtitle">Распознаёт визитки и рукописные заметки на любом языке — как живой человек</div>
+
+  <div class="setup-card">
+    <div class="setup-label">Claude API Key</div>
+    <input class="setup-input" id="setup-key" type="password"
+      placeholder="sk-ant-api03-…"
+      oninput="document.getElementById('setup-go').disabled=this.value.length<10">
+    <div class="setup-hint">
+      Получи бесплатно на <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      → API Keys → Create Key<br>
+      ~$5 хватает на 500+ визиток
+    </div>
+    <button class="setup-btn" id="setup-go" disabled onclick="finishSetup()">
+      Начать →
+    </button>
+  </div>
+  <div class="setup-skip" onclick="skipSetup()">Пропустить (без API-ключа)</div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Card <span>Scanner</span></div>
+      <div id="api-badge" style="font-size:12px;padding:4px 10px;border-radius:99px;background:rgba(124,106,247,.15);color:var(--accent2);font-weight:600;cursor:pointer" onclick="switchView('settings')">✨ Claude</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-view="scan">📷 Сканер</div>
+      <div class="tab" data-view="contacts">📋 Контакты <span id="tab-cnt"></span></div>
+      <div class="tab" data-view="settings">⚙️</div>
+    </div>
+  </div>
+
+  <!-- SCAN -->
+  <div class="view active" id="view-scan">
+    <div class="scan-wrap">
+
+      <div class="img-area" id="img-area">
+        <div class="img-placeholder">
+          <span class="big-icon">📷</span>
+          <p>Нажмите чтобы выбрать фото</p>
+          <small>Визитки, рукописные заметки, любой язык</small>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="triggerCamera()">📷 Камера</button>
+        <button class="btn" onclick="triggerGallery()">🖼 Галерея</button>
+        <button class="btn btn-primary" id="btn-scan" disabled onclick="runScan()">🔍 Сканировать</button>
+      </div>
+
+      <div class="status-pill" id="status-pill">
+        <div class="status-dot idle" id="status-dot"></div>
+        <span id="status-text">Выберите фото для сканирования</span>
+      </div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <!-- raw OCR text -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">Распознанный текст</span>
+          <button class="section-action" onclick="reparseFields()">↻ Заполнить поля</button>
+        </div>
+        <textarea class="raw-text" id="raw-text" placeholder="Здесь появится весь текст с визитки (печатный + рукописный)…"></textarea>
+      </div>
+
+      <!-- parsed fields -->
+      <div class="section-card" id="fields-card">
+        <div class="section-header">
+          <span class="section-title">Данные</span>
+          <button class="section-action" onclick="clearFields()">Очистить</button>
+        </div>
+        <div class="field-row"><span class="field-label">Имя</span><input class="field-input" id="f-name" placeholder="—" type="text"></div>
+        <div class="field-row"><span class="field-label">Компания</span><input class="field-input" id="f-company" placeholder="—" type="text"></div>
+        <div class="field-row"><span class="field-label">Должность</span><input class="field-input" id="f-title" placeholder="—" type="text"></div>
+        <div class="field-row"><span class="field-label">Телефон</span><input class="field-input" id="f-phone" placeholder="—" type="tel"></div>
+        <div class="field-row"><span class="field-label">Email</span><input class="field-input" id="f-email" placeholder="—" type="email"></div>
+        <div class="field-row"><span class="field-label">Сайт</span><input class="field-input" id="f-web" placeholder="—"></div>
+        <div class="field-row"><span class="field-label">Адрес</span><input class="field-input" id="f-address" placeholder="—"></div>
+        <div class="field-row"><span class="field-label">Страна</span><input class="field-input" id="f-country" placeholder="—"></div>
+        <div class="field-row"><span class="field-label">Заметки</span><textarea class="field-input" id="f-notes" rows="3" placeholder="—"></textarea></div>
+      </div>
+
+      <button class="btn btn-green" onclick="addContact()">➕ Добавить в контакты</button>
+
+    </div>
+  </div>
+
+  <!-- CONTACTS -->
+  <div class="view" id="view-contacts">
+    <div class="contacts-wrap">
+      <input class="search-input" type="search" placeholder="🔍 Поиск по имени, компании, заметкам…" oninput="renderContacts(this.value)">
+      <div class="stats-row" id="stats-row"></div>
+      <div class="export-btns">
+        <button class="btn btn-primary" onclick="exportCSV()">📄 CSV</button>
+        <button class="btn" onclick="exportJSON()">💾 JSON</button>
+        <button class="btn btn-outline" style="color:var(--red)" onclick="confirmClearAll()">🗑 Очистить всё</button>
+      </div>
+      <div class="contacts-list" id="contacts-list"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="settings-wrap">
+
+      <div class="info-box">
+        В этом приложении используется <strong>Claude Vision</strong> — та же технология, которая распознаёт визитки в исходном чате. Читает печатный текст, рукопись, русский, английский, японский, корейский одновременно.
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">API Key</div>
+        <div class="key-input-wrap">
+          <div id="key-status-display"></div>
+          <input class="key-input" id="key-input" type="password" placeholder="sk-ant-api03-…">
+          <button class="key-save-btn" onclick="saveKey()">💾 Сохранить</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Как получить ключ</div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:0">
+          <div style="font-size:14px;line-height:2;color:var(--muted);padding:0">
+            1. Открой <strong style="color:var(--text)">console.anthropic.com</strong><br>
+            2. Создай аккаунт или войди<br>
+            3. Слева → <strong style="color:var(--text)">API Keys</strong><br>
+            4. <strong style="color:var(--text)">Create Key</strong> → скопируй<br>
+            5. Вставь выше и нажми Сохранить<br><br>
+            <span style="color:var(--orange)">~$5 хватает на 500+ визиток (~$0.01 за визитку)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">База контактов</div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <label>Хранится на устройстве</label>
+            <small>Контакты сохраняются в браузере (IndexedDB). Ключ API хранится только на вашем телефоне.</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="input-camera"  accept="image/*" capture="environment" style="display:none" onchange="handleFile(this)">
+<input type="file" id="input-gallery" accept="image/*" style="display:none" onchange="handleFile(this)">
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  IndexedDB
+// ═══════════════════════════════════════════════════════
+const DB = (() => {
+  let db;
+  const open = () => new Promise((res, rej) => {
+    const r = indexedDB.open('CardScannerV5', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('contacts', { keyPath: 'id', autoIncrement: true });
+    r.onsuccess = e => { db = e.target.result; res(); };
+    r.onerror = rej;
+  });
+  const all  = ()   => new Promise((res, rej) => { const r = db.transaction('contacts').objectStore('contacts').getAll(); r.onsuccess = () => res(r.result); r.onerror = rej; });
+  const add  = (d)  => new Promise((res, rej) => { const r = db.transaction('contacts','readwrite').objectStore('contacts').add(d); r.onsuccess = () => res(r.result); r.onerror = rej; });
+  const del  = (id) => new Promise((res, rej) => { const r = db.transaction('contacts','readwrite').objectStore('contacts').delete(id); r.onsuccess = res; r.onerror = rej; });
+  const clear = ()  => new Promise((res, rej) => { const r = db.transaction('contacts','readwrite').objectStore('contacts').clear(); r.onsuccess = res; r.onerror = rej; });
+  return { open, all, add, del, clear };
+})();
+
+// ═══════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════
+let contacts = [];
+let imgData  = null;
+let apiKey   = localStorage.getItem('claudeApiKey') || '';
+
+const FIELDS = ['name','company','title','phone','email','web','address','country','notes'];
+const F = id => document.getElementById('f-' + id);
+
+// ═══════════════════════════════════════════════════════
+//  Setup screen
+// ═══════════════════════════════════════════════════════
+function finishSetup() {
+  const key = document.getElementById('setup-key').value.trim();
+  if (!key.startsWith('sk-ant')) { toast('⚠ Неверный формат ключа'); return; }
+  apiKey = key;
+  localStorage.setItem('claudeApiKey', key);
+  launchApp();
+}
+
+function skipSetup() {
+  launchApp();
+}
+
+function launchApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateKeyStatus();
+  updateScanBtn();
+}
+
+// ═══════════════════════════════════════════════════════
+//  Claude Vision API
+// ═══════════════════════════════════════════════════════
+const CLAUDE_PROMPT = `You are an expert at reading business cards and handwritten notes in any language (English, Russian, Japanese, Korean, Chinese, etc.).
+
+Carefully examine this image and extract ALL text you can see — both printed text on the business card AND any handwritten notes.
+
+Return ONLY a valid JSON object (no markdown, no explanation) with these exact fields:
+{
+  "name": "person's full name",
+  "company": "company or organization name",
+  "title": "job title or position",
+  "phone": "phone number(s), separate multiple with ' / '",
+  "email": "email address",
+  "web": "website URL",
+  "address": "physical address",
+  "country": "country name in English",
+  "notes": "ALL handwritten annotations, notes, or additional info you can see — translate to English if possible but keep original too",
+  "raw_text": "complete verbatim text from the entire image, both printed and handwritten, in original languages"
+}
+
+Rules:
+- If a field is not visible, use empty string ""
+- For notes: include ALL handwritten text even if partial or unclear — this is critical
+- Detect language automatically — Japanese, Korean, Russian, Chinese all supported
+- For Japanese/Korean companies: include both original name and any romanized version`;
+
+async function runClaudeAPI(imageUrl) {
+  if (!apiKey) throw new Error('NO_KEY');
+
+  // Convert image to base64
+  const blob = await fetch(imageUrl).then(r => r.blob());
+  const b64  = await new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.readAsDataURL(blob);
+  });
+  const mime = blob.type || 'image/jpeg';
+
+  setProgress(30);
+  setStatus('loading', 'Claude анализирует изображение…');
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+          { type: 'text',  text: CLAUDE_PROMPT }
+        ]
+      }]
+    })
+  });
+
+  setProgress(80);
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    if (resp.status === 401) throw new Error('INVALID_KEY');
+    throw new Error(err.error?.message || `API error ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data.content?.find(b => b.type === 'text')?.text || '';
+
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Нет JSON в ответе');
+
+  return JSON.parse(match[0]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Fallback parser (when no API key)
+// ═══════════════════════════════════════════════════════
+function fallbackParse(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const d = {};
+  const emailM = text.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
+  if (emailM) d.email = emailM[0].toLowerCase();
+  const phones = [...text.matchAll(/(\+?[\d][\d\s\-().]{6,20})/g)]
+    .map(m => m[1].trim()).filter(p => p.replace(/\D/g,'').length >= 7);
+  if (phones.length) d.phone = [...new Set(phones)].slice(0,2).join(' / ');
+  const urlM = text.match(/(?:https?:\/\/|www\.)\S+/i);
+  if (urlM) d.web = urlM[0].replace(/[.,)>]+$/,'');
+  const compKW = ['Co.,','Ltd.','Corp.','Inc.','LLC','GmbH','B&H','株式会社','주식회사','有限公司'];
+  for (const l of lines) if (compKW.some(k => l.includes(k)) && l.length < 60) { d.company = l; break; }
+  const titleKW = ['CEO','COO','CTO','Owner','Founder','Director','Manager','President','VP','Partner','Head','Chief'];
+  for (const l of lines) if (titleKW.some(k => l.toUpperCase().includes(k)) && l.length < 60) { d.title = l; break; }
+  for (const [kw,c] of [['JAPAN','Japan'],['KOREA','Korea'],['CHINA','China'],['FRANCE','France'],['USA','USA']]) {
+    if (text.toUpperCase().includes(kw)) { d.country = c; break; }
+  }
+  for (const l of lines) {
+    const w = l.split(/\s+/);
+    if (w.length >= 1 && w.length <= 4 && !compKW.some(k=>l.includes(k)) && !/[@\d\\/]/.test(l) && /^[A-Z\u0400-\u04FF]/.test(l)) {
+      d.name = l; break;
+    }
+  }
+  d.raw_text = text;
+  return d;
+}
+
+// ═══════════════════════════════════════════════════════
+//  Main scan flow
+// ═══════════════════════════════════════════════════════
+async function runScan() {
+  if (!imgData) { toast('⚠ Сначала выберите фото'); return; }
+
+  document.getElementById('btn-scan').disabled = true;
+  document.getElementById('raw-text').value = '';
+  FIELDS.forEach(k => { if(F(k)) F(k).value = ''; });
+
+  try {
+    if (!apiKey) {
+      toast('⚠ Нет API-ключа — используется базовый парсер');
+      setStatus('loading', 'Базовый парсер (без Claude)…');
+      setProgress(50);
+      // Can't do OCR without API — prompt user
+      setStatus('error', 'Нужен API-ключ для распознавания');
+      setProgress(0);
+      toast('Добавьте API-ключ в ⚙️ Настройки');
+      switchView('settings');
+      document.getElementById('btn-scan').disabled = false;
+      return;
+    }
+
+    setStatus('loading', 'Отправляем в Claude…');
+    setProgress(15);
+    showProgress(true);
+
+    const result = await runClaudeAPI(imgData);
+
+    // Show raw text
+    document.getElementById('raw-text').value = result.raw_text || '';
+
+    // Fill fields
+    FIELDS.forEach(k => { if(F(k)) F(k).value = result[k] || ''; });
+
+    setProgress(100);
+    setStatus('ready', '✅ Готово — проверьте и добавьте контакт');
+    setTimeout(() => showProgress(false), 600);
+    toast('✅ Распознано успешно');
+
+  } catch (err) {
+    showProgress(false);
+    if (err.message === 'NO_KEY') {
+      setStatus('error', 'Нужен API-ключ');
+      toast('⚠ Добавьте API-ключ в Настройки');
+      switchView('settings');
+    } else if (err.message === 'INVALID_KEY') {
+      setStatus('error', 'Неверный API-ключ');
+      toast('❌ Неверный API-ключ — проверьте в Настройках');
+      switchView('settings');
+    } else {
+      setStatus('error', 'Ошибка: ' + err.message);
+      toast('❌ ' + err.message);
+    }
+  }
+
+  document.getElementById('btn-scan').disabled = false;
+}
+
+function reparseFields() {
+  const text = document.getElementById('raw-text').value;
+  if (!text) { toast('⚠ Нет текста для разбора'); return; }
+  const parsed = fallbackParse(text);
+  FIELDS.forEach(k => { if(F(k) && !F(k).value) F(k).value = parsed[k] || ''; });
+  toast('↻ Поля обновлены');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Image handling
+// ═══════════════════════════════════════════════════════
+function triggerCamera()  { document.getElementById('input-camera').click(); }
+function triggerGallery() { document.getElementById('input-gallery').click(); }
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  imgData = url;
+  const area = document.getElementById('img-area');
+  area.innerHTML = `<img src="${url}" alt="card" style="max-height:280px">
+    <div class="img-overlay">
+      <button class="img-btn" onclick="triggerCamera()">📷 Камера</button>
+      <button class="img-btn" onclick="triggerGallery()">🖼 Галерея</button>
+    </div>`;
+  setStatus('idle', 'Фото загружено — нажмите Сканировать');
+  updateScanBtn();
+  input.value = '';
+}
+
+function updateScanBtn() {
+  document.getElementById('btn-scan').disabled = !imgData;
+}
+
+// ═══════════════════════════════════════════════════════
+//  Contacts
+// ═══════════════════════════════════════════════════════
+async function addContact() {
+  const c = {};
+  FIELDS.forEach(k => { c[k] = F(k) ? F(k).value.trim() : ''; });
+  if (!Object.values(c).some(Boolean)) { toast('⚠ Все поля пусты'); return; }
+  c.ts = Date.now();
+  const id = await DB.add(c);
+  c.id = id;
+  contacts.push(c);
+  updateStats();
+  renderContacts();
+  clearScan();
+  switchView('contacts');
+  toast('✅ Контакт сохранён');
+}
+
+async function deleteContact(id) {
+  if (!confirm('Удалить контакт?')) return;
+  await DB.del(id);
+  contacts = contacts.filter(c => c.id !== id);
+  updateStats();
+  renderContacts();
+}
+
+async function confirmClearAll() {
+  if (!contacts.length) { toast('⚠ Нет контактов'); return; }
+  if (!confirm(`Удалить все ${contacts.length} контактов? Это нельзя отменить.`)) return;
+  await DB.clear();
+  contacts = [];
+  updateStats();
+  renderContacts();
+  toast('🗑 Все контакты удалены');
+}
+
+function renderContacts(search = '') {
+  const list = document.getElementById('contacts-list');
+  const q = search.toLowerCase();
+  const filtered = contacts.filter(c =>
+    !q || ['name','company','email','notes','title'].some(k => (c[k]||'').toLowerCase().includes(q))
+  );
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span><p>${search ? 'Ничего не найдено' : 'Пока нет контактов'}</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.slice().reverse().map(c => `
+    <div class="contact-card">
+      <button class="c-del" onclick="deleteContact(${c.id})">✕</button>
+      <div class="c-name">${esc(c.name || '—')}</div>
+      ${c.company ? `<div class="c-company">${esc(c.company)}</div>` : ''}
+      <div class="c-row">
+        ${c.title   ? `<span>💼 ${esc(c.title)}</span>` : ''}
+        ${c.phone   ? `<span>📞 ${esc(c.phone)}</span>` : ''}
+        ${c.email   ? `<span>✉️ ${esc(c.email)}</span>` : ''}
+        ${c.web     ? `<span>🌐 ${esc(c.web)}</span>`   : ''}
+        ${c.address ? `<span>📍 ${esc(c.address)}</span>` : ''}
+        ${c.country ? `<span>🌍 ${esc(c.country)}</span>` : ''}
+        ${c.notes   ? `<span>📝 ${esc(c.notes)}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function updateStats() {
+  const n = contacts.length;
+  document.getElementById('tab-cnt').textContent = n ? `(${n})` : '';
+  const byCountry = contacts.reduce((a, c) => { a[c.country||'?'] = (a[c.country||'?']||0)+1; return a; }, {});
+  const top = Object.entries(byCountry).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  document.getElementById('stats-row').innerHTML = [
+    `<div class="stat-chip"><strong>${n}</strong>всего</div>`,
+    ...top.map(([c,v]) => `<div class="stat-chip"><strong>${v}</strong>${c}</div>`)
+  ].join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Export
+// ═══════════════════════════════════════════════════════
+function exportCSV() {
+  if (!contacts.length) { toast('⚠ Нет контактов'); return; }
+  const hdr  = ['Name','Company','Title','Phone','Email','Website','Address','Country','Notes'];
+  const keys = ['name','company','title','phone','email','web','address','country','notes'];
+  const rows = [hdr, ...contacts.map(c => keys.map(k => `"${(c[k]||'').replace(/"/g,'""')}"`))];
+  dl('\uFEFF' + rows.map(r => r.join(',')).join('\n'), `contacts_${ts()}.csv`, 'text/csv;charset=utf-8');
+  toast('✅ CSV сохранён');
+}
+
+function exportJSON() {
+  if (!contacts.length) { toast('⚠ Нет контактов'); return; }
+  dl(JSON.stringify(contacts, null, 2), `contacts_${ts()}.json`, 'application/json');
+  toast('✅ JSON сохранён');
+}
+
+function dl(content, filename, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Settings
+// ═══════════════════════════════════════════════════════
+function saveKey() {
+  const val = document.getElementById('key-input').value.trim();
+  if (!val.startsWith('sk-ant')) { toast('⚠ Неверный формат ключа'); return; }
+  apiKey = val;
+  localStorage.setItem('claudeApiKey', val);
+  updateKeyStatus();
+  updateScanBtn();
+  toast('✅ API-ключ сохранён');
+}
+
+function updateKeyStatus() {
+  const el = document.getElementById('key-status-display');
+  const inp = document.getElementById('key-input');
+  if (apiKey) {
+    el.innerHTML = `<div class="key-status ok">✅ Ключ сохранён: ${apiKey.slice(0,12)}…</div>`;
+    inp.placeholder = 'Введите новый ключ для замены';
+  } else {
+    el.innerHTML = `<div class="key-status none">⚠ API-ключ не задан</div>`;
+    inp.placeholder = 'sk-ant-api03-…';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  UI helpers
+// ═══════════════════════════════════════════════════════
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchView(t.dataset.view)));
+
+document.getElementById('img-area').addEventListener('click', () => { if (!imgData) triggerGallery(); });
+
+function clearScan() {
+  FIELDS.forEach(k => { if(F(k)) F(k).value = ''; });
+  imgData = null;
+  document.getElementById('raw-text').value = '';
+  document.getElementById('img-area').innerHTML = `
+    <div class="img-placeholder">
+      <span class="big-icon">📷</span>
+      <p>Нажмите чтобы выбрать фото</p>
+      <small>Визитки, рукописные заметки, любой язык</small>
+    </div>`;
+  setStatus('idle', 'Выберите фото для сканирования');
+  showProgress(false);
+  updateScanBtn();
+}
+
+function clearFields() {
+  FIELDS.forEach(k => { if(F(k)) F(k).value = ''; });
+  document.getElementById('raw-text').value = '';
+}
+
+function setStatus(state, msg) {
+  document.getElementById('status-dot').className = 'status-dot ' + state;
+  document.getElementById('status-text').textContent = msg;
+}
+
+function showProgress(show) {
+  document.getElementById('progress-wrap').classList.toggle('show', show);
+}
+
+function setProgress(pct) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ts  = () => new Date().toISOString().slice(0,16).replace('T','_').replace(':','-');
+
+// ═══════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════
+(async () => {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  await DB.open();
+  contacts = await DB.all();
+
+  if (apiKey) {
+    // Already has key — skip setup
+    document.getElementById('setup-key').value = apiKey;
+    launchApp();
+  }
+  // else setup screen is shown by default
+
+  updateKeyStatus();
+  updateStats();
+  renderContacts();
+})();
+</script>
+</body>
+</html>
